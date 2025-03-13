@@ -254,6 +254,10 @@ class Trainer(object):
                 'b d -> (repeat b) d', repeat=n_samples,
             )
 
+            # nominal_gc = [[25, 25, 0.3, 0, 0, 0, 1, 0,0,0, 0,0,0, 0.0, 0.8, -1.5, 0.0, 0.8, -1.5, 0.0, 1.0, -1.5, 0.0, 1.0, -1.5, 0,0,0,0,0,0,0,0,0,0,0,0]]
+            # nominal_gc = self.dataset.normalizer.normalize(to_np(nominal_gc), 'observations')
+            # conditions = {0: torch.Tensor(nominal_gc).to(self.device)}
+
             commands = [[1, 1.5, 0, 0]] #, [2, 1.5, 0, 0], [3, 1.5, 0, 0], [0, 1.5, 0, 0]]
             # commands = [[1, 0.8, 0, 0], [1, -0.8, 0, 0], [1, 0, 0.4, 0], [1, 0, 0, 0.8]]
             # commands = [[2, 0.8, 0, 0], [2, -0.8, 0, 0], [2, 0, 0.4, 0], [2, 0, 0, 0.8]]

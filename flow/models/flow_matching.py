@@ -52,7 +52,7 @@ class CondOTFlowMatching(nn.Module):
         return loss
 
     def flow_loss(self, x1, cond, t, returns=None):
-        x0 = torch.randn_like(x1)
+        x0 = torch.rand_like(x1)
 
         # OT Path
         xt = t[:, None, None] * x1 + (1 - t[:, None, None]) * x0
@@ -70,7 +70,7 @@ class CondOTFlowMatching(nn.Module):
         batch_size = len(x)
         t = torch.zeros(batch_size, device=x.device)
         x1 = x[:, :, self.action_dim:]
-        x0 = torch.randn_like(x1)
+        x0 = torch.rand_like(x1)
 
         xt = apply_conditioning(x0, cond, 0)
         pred_flow = self.model(xt, cond, t, returns)
@@ -93,8 +93,8 @@ class CondOTFlowMatching(nn.Module):
         horizon = self.horizon
         shape = (batch_size, horizon, self.observation_dim)
 
-        x0 = torch.randn(batch_size, horizon, self.observation_dim).to(device)
-        x0 = apply_conditioning(x0, cond, 0)
+        x0 = torch.rand(batch_size, horizon, self.observation_dim).to(device)
+        # x0 = apply_conditioning(x0, cond, 0)
         t = torch.tensor([0.0, 1.0]).to(device)
 
         # v_fn = partial(self.model, cond=cond, returns=returns)
@@ -109,10 +109,10 @@ class CondOTFlowMatching(nn.Module):
         batch_size = len(cond[0])
         t = torch.zeros(batch_size, device=device)
         horizon = self.horizon
-        x0 = torch.randn(batch_size, horizon, self.observation_dim).to(device)
+        x0 = torch.rand(batch_size, horizon, self.observation_dim).to(device)
 
         xt = apply_conditioning(x0, cond, 0)
-        pred_flow = self.model(xt, cond, t, returns)
+        pred_flow = self.model(xt, cond, t, returns, False)
         return x0 + pred_flow
 
     def forward(self, cond, *args, **kwargs):

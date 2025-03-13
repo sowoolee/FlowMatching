@@ -3,7 +3,7 @@ import torch
 from params_proto import ParamsProto
 
 class Config(ParamsProto):
-    prefix = "flow/4gait/unet"
+    prefix = "flow_unif/4gait/unet"
     # misc
     seed = 100
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -23,7 +23,7 @@ class Config(ParamsProto):
     returns_condition = True
     calc_energy=False
     dim = 128 # 128
-    condition_dropout = 0.25
+    condition_dropout = 0.
     condition_guidance_w = 1.4
     test_ret = 0.9
     renderer = 'utils.RaisimRenderer'

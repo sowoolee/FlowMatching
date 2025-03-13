@@ -1,2 +1,4 @@
 runs/
 weights/
+script/hubolab/
+.pkl
