@@ -57,7 +57,7 @@ class CondOTFlowMatching(nn.Module):
         # OT Path
         xt = t[:, None, None] * x1 + (1 - t[:, None, None]) * x0
         xt = xt.to(x1.device)
-        xt = apply_conditioning(xt, cond, 0)
+        # xt = apply_conditioning(xt, cond, 0)
         true_flow = x1 - x0
 
         pred_flow = self.model(xt, cond, t, returns)
@@ -101,7 +101,7 @@ class CondOTFlowMatching(nn.Module):
         v_fn = lambda t, xt: self.model(xt, cond, t.unsqueeze(-1), returns)
 
         with torch.no_grad():
-            x1 = odeint(v_fn, x0, t, method='dopri5', atol=1e-5, rtol=1e-5)
+            x1 = odeint(v_fn, x0, t, method='midpoint', atol=1e-5, rtol=1e-5)
         return x1[-1]
 
     def inference_1step(self, cond, returns=None):

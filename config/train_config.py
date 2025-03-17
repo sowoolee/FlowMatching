@@ -3,7 +3,7 @@ import torch
 from params_proto import ParamsProto
 
 class Config(ParamsProto):
-    prefix = "flow_unif/4gait/unet"
+    prefix = "flow/4gait/unet"
     # misc
     seed = 100
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

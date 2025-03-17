@@ -33,7 +33,7 @@ class Config(collections.Mapping):
             print(self)
 
         if savepath is not None:
-            logger.save_pkl(self, savepath)
+            # logger.save_pkl(self, savepath)
             print(f'[ utils/config ] Saved config to: {savepath}\n')
 
     def __repr__(self):

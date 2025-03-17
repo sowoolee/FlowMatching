@@ -106,8 +106,8 @@ def import_trainer(path):
 
     Config.device = 'cuda:0'
 
-    basepath = '/home/hubolab/workspace/FM/weights/flow_unif/'
-    loadpath = os.path.join(basepath, path, 'checkpoint', 'state_25000.pt')
+    basepath = '/home/hubolab/workspace/FM/weights/flow/'
+    loadpath = os.path.join(basepath, path, 'checkpoint', 'state_100000.pt')
     state_dict = torch.load(loadpath, map_location=Config.device)
 
     # Load configs
@@ -232,7 +232,11 @@ def test():
     target_x_vels = np.ones(total_steps) * v_x
 
     while t < total_steps:
-        returns = to_device(torch.Tensor([[gait_num, v_x, 0,0] for i in range(num_envs)]), device)
+        if t < total_steps / 2:
+            gait_num = 1
+        else:
+            gait_num = 2
+        returns = to_device(torch.Tensor([[gait_num, v_x, 0,0.5] for i in range(num_envs)]), device)
 
         obs = np.concatenate([
             to_np([[0.,0.]]),

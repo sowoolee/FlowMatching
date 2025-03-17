@@ -110,8 +110,17 @@ class TemporalUnet(nn.Module):
                 act_fn,
                 nn.Linear(dim * 4, dim),
             )
+
+            self.obs_mlp = nn.Sequential(
+                nn.Linear(transition_dim,dim),
+                act_fn,
+                nn.Linear(dim, dim * 4),
+                act_fn,
+                nn.Linear(dim * 4, dim),
+            )
+
             self.mask_dist = Bernoulli(probs=1-self.condition_dropout)
-            embed_dim = 2*dim
+            embed_dim = 3*dim
         else:
             embed_dim = dim
 
@@ -167,12 +176,13 @@ class TemporalUnet(nn.Module):
         if self.returns_condition:
             assert returns is not None
             returns_embed = self.returns_mlp(returns)
+            obs_embed = self.obs_mlp(cond[0])
             if use_dropout:
                 mask = self.mask_dist.sample(sample_shape=(returns_embed.size(0), 1)).to(returns_embed.device)
                 returns_embed = mask*returns_embed
             if force_dropout:
                 returns_embed = 0*returns_embed
-            t = torch.cat([t, returns_embed], dim=-1)
+            t = torch.cat([t, returns_embed, obs_embed], dim=-1)
 
         h = []
 
