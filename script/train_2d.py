@@ -59,6 +59,11 @@ def flow_matching_loss(net, data, z):
     v_pred = net(x_input)  # Predict velocity
 
     loss = ((v_pred - v_target) ** 2).mean()
+
+    # x1_pred = (1 - t) * v_pred + x_t
+    # projection_loss = ((x1_pred[:, 1] - x1_pred[:, 0]) ** 2).mean()
+    # loss += projection_loss * 10.
+
     return loss
 
 # Training parameters
@@ -86,7 +91,8 @@ for epoch in range(num_epochs):
         print(f"Epoch {epoch}, Train Loss: {loss.item():.4f}, Val Loss: {val_loss.item():.4f}")
 
 # RK4 Sampling function
-def RK4_sampling(net, z_init, num_steps=10):
+def RK4_sampling(net, z_init, num_steps=10, return_flows=False):
+    inter_zs = []
     h = 1.0 / num_steps  # Step size
     z = torch.tensor(z_init, dtype=torch.float32)
     t = torch.zeros(z.shape[0], 1, dtype=torch.float32)
@@ -97,13 +103,34 @@ def RK4_sampling(net, z_init, num_steps=10):
         k3 = net(torch.cat([z + (h / 2) * k2, t], dim=1))
         k4 = net(torch.cat([z + h * k3, t], dim=1))
         z = z + (h / 6) * (k1 + 2*k2 + 2*k3 + k4)
+
+        z_optim = z.clone().detach().requires_grad_(True)
+        optimizer = optim.Adam([z_optim], lr=0.1)
+        opt_steps = 1
+        for step in range(opt_steps):
+            optimizer.zero_grad()
+            loss = ((z_optim[:, 1] - z_optim[:, 0]) ** 2).mean()
+            loss.backward()
+            optimizer.step()
+        # z = z_optim.detach()
+
+        inter_zs.append(z.detach().numpy())
+
         t += h
 
-    return z.detach().numpy()
+    if return_flows:
+        return inter_zs
+    else:
+        return z.detach().numpy()
 
 # Generate new noise samples
-z_new = np.random.randn(1000, 2).astype(np.float32)
-generated_data = RK4_sampling(net, z_new, num_steps=10)
+z_new = np.random.randn(500, 2).astype(np.float32)
+generated_flows = RK4_sampling(net, z_new, num_steps=100, return_flows=True)
+generated_data = generated_flows[-1]
+
+generated_data_projected = generated_data.copy()
+generated_data_projected[:, 0] = (generated_data[:, 0] + generated_data[:, 1]) / 2
+generated_data_projected[:, 1] = (generated_data[:, 0] + generated_data[:, 1]) / 2
 
 # Create velocity field for visualization
 x_range = np.linspace(-3, 3, 20)
@@ -123,11 +150,21 @@ with torch.no_grad():
 Ux = V[:, 0].reshape(X.shape)  # x-component of velocity
 Uy = V[:, 1].reshape(Y.shape)  # y-component of velocity
 
+generated_data_torch = torch.tensor(generated_data, dtype=torch.float32, requires_grad=True)
+optimizer = optim.Adam([generated_data_torch], lr=0.1)
+num_steps = 100
+for step in range(num_steps):
+    optimizer.zero_grad()
+    loss = ((generated_data_torch[:, 1] - generated_data_torch[:, 0]) ** 2).mean()
+    loss.backward()
+    optimizer.step()
+generated_data_optimized = generated_data_torch.detach().numpy()
 
-plt.figure(figsize=(16, 4))
+
+plt.figure(figsize=(20, 6))
 
 # scatter plot of data
-plt.subplot(1, 4, 1)
+plt.subplot(2, 5, 1)
 plt.scatter(data[:, 0], data[:, 1], s=15)
 plt.title('Synthetic 2D Gaussian Mixture Data')
 plt.xlabel('x')
@@ -135,7 +172,7 @@ plt.ylabel('y')
 plt.axis('equal')
 
 # plot training loss
-plt.subplot(1, 4, 2)
+plt.subplot(2, 5, 2)
 plt.plot(train_loss_history, label='Train Loss')
 plt.plot(val_loss_history, label='Val Loss', linestyle='dashed')
 plt.xlabel('Epoch')
@@ -144,17 +181,46 @@ plt.title('Flow Matching Training Loss')
 plt.legend()
 
 # plot generated sample
-plt.subplot(1, 4, 3)
+plt.subplot(2, 5, 3)
 plt.scatter(generated_data[:, 0], generated_data[:, 1], s=15)
-plt.title('Generated Samples via Flow Matching (RK4)')
+plt.title('Generated Samples via RK4 100 steps')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.axis('equal')
 
 # plot velocity field
-plt.subplot(1, 4, 4)
+plt.subplot(2, 5, 4)
 plt.quiver(X, Y, Ux, Uy, scale=50, color='blue')
 plt.title('Learned Velocity Field')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.axis('equal')
+
+plt.subplot(2, 5, 5)
+plt.scatter(generated_data_projected[:, 0], generated_data_projected[:, 1], s=15)
+plt.title('Projected Samples')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.axis('equal')
+
+for i, step in enumerate([25, 50, 75]):
+    plt.subplot(2, 5, i + 6)
+    plt.scatter(generated_flows[step][:, 0], generated_flows[step][:, 1], s=15)
+    plt.title(f'Step {step}')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.axis('equal')
+
+plt.subplot(2, 5, 9)
+plt.scatter(generated_data_optimized[:, 0], generated_data_optimized[:, 1], s=15)
+plt.title('Optimized Samples (during inference)')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.axis('equal')
+
+plt.subplot(2, 5, 10)
+plt.scatter(generated_data_optimized[:, 0], generated_data_optimized[:, 1], s=15)
+plt.title('Optimized Samples (after inference)')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.axis('equal')

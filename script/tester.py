@@ -216,7 +216,7 @@ def test():
 
     # y conditioning
     gait_num = 1
-    v_x = 1.5
+    v_x = 2.0
 
     # start testing
     t = 0
@@ -236,7 +236,7 @@ def test():
             gait_num = 1
         else:
             gait_num = 2
-        returns = to_device(torch.Tensor([[gait_num, v_x, 0,0.5] for i in range(num_envs)]), device)
+        returns = to_device(torch.Tensor([[gait_num, v_x, 0,0] for i in range(num_envs)]), device)
 
         obs = np.concatenate([
             to_np([[0.,0.]]),
